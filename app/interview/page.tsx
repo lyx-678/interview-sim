@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { track } from "@vercel/analytics";
 
 type Msg = { role: "assistant" | "user"; content: string };
 
@@ -66,7 +67,7 @@ function InterviewInner() {
     }
   }
 
-  async function evaluate(history: Msg[]) {
+  async function evaluate(history: Msg[], early = false) {
     if (history.length === 0) {
       setError("还没有对话内容，不能生成报告");
       return;
@@ -86,6 +87,12 @@ function InterviewInner() {
         "interviewReport",
         JSON.stringify({ position, type, years, ...data })
       );
+      track(early ? "interview_abandoned" : "interview_completed", {
+        position,
+        type,
+        questions: early ? questionIndex : TOTAL,
+        score: data.score,
+      });
       setDone(true);
       router.push("/report");
     } catch (e) {
@@ -112,6 +119,7 @@ function InterviewInner() {
 
   async function skipQuestion() {
     if (loading || done || questionIndex === 0) return;
+    track("question_skipped", { position, questionIndex });
     const text = "这个问题我没有接触过，能换一个问题吗？";
     const nextMessages: Msg[] = [...messages, { role: "user", content: text }];
     setMessages(nextMessages);
@@ -146,7 +154,7 @@ function InterviewInner() {
           <button
             className="text-btn"
             type="button"
-            onClick={() => evaluate(messages)}
+            onClick={() => evaluate(messages, true)}
             disabled={!canEarlyFinish}
           >
             提前结束

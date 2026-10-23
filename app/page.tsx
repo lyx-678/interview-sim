@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { track } from "@vercel/analytics";
 
 const INDUSTRIES = [
   {
@@ -218,7 +219,11 @@ export default function HomePage() {
           <span>{focusText}</span>
         </div>
 
-        <Link className="btn btn-block" href={href}>
+        <Link
+          className="btn btn-block"
+          href={href}
+          onClick={() => track("start_interview", { position, type, years })}
+        >
           开始面试 →
         </Link>
         <p className="hint">共 5 题，约 10 分钟。不需要注册，不收集个人信息。</p>
